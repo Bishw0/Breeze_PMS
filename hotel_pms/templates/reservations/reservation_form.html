@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Hotel PMS{% endblock %}
+{% block breadcrumb %}<a href="{% url 'reservation_list' %}">Reservations</a> / {{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-9">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <button onclick="history.back()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></button>
+        <h4 class="fw-bold mb-0">{{ title }}</h4>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header py-3 px-4">Guest & Room</div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Guest <span class="text-danger">*</span></label>
+                            {{ form.guest }}
+                            {% for e in form.guest.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Room <span class="text-danger">*</span></label>
+                            {{ form.room }}
+                            {% for e in form.room.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Adults</label>
+                                {{ form.adults }}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-semibold">Children</label>
+                                {{ form.children }}
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label small fw-semibold">Booking Source</label>
+                            {{ form.source }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header py-3 px-4">Dates & Pricing</div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Check-in Date <span class="text-danger">*</span></label>
+                            {{ form.check_in }}
+                            {% for e in form.check_in.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Check-out Date <span class="text-danger">*</span></label>
+                            {{ form.check_out }}
+                            {% for e in form.check_out.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Rate per Night ($)</label>
+                            {{ form.rate_per_night }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Discount (%)</label>
+                            {{ form.discount_percent }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header py-3 px-4">Additional Information</div>
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Special Requests</label>
+                            {{ form.special_requests }}
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small fw-semibold">Internal Notes</label>
+                            {{ form.internal_notes }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mt-3">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+        {% endif %}
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Reservation</button>
+            <button type="button" onclick="history.back()" class="btn btn-outline-secondary">Cancel</button>
+        </div>
+    </form>
+</div>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+    select.form-control, input.form-control, textarea.form-control { border-radius: 6px; }
+    form select, form input[type=text], form input[type=number], form input[type=date], form input[type=email], form textarea {
+        display: block; width: 100%; padding: .375rem .75rem; font-size: .875rem;
+        border: 1px solid #dee2e6; border-radius: 6px; background: #fff;
+    }
+    form select { background-image: none; }
+</style>
+{% endblock %}

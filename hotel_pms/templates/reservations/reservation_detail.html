@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}{{ reservation.reservation_number }} — Hotel PMS{% endblock %}
+{% block breadcrumb %}<a href="{% url 'reservation_list' %}">Reservations</a> / {{ reservation.reservation_number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">Reservation #{{ reservation.reservation_number }}</h4>
+        <small class="text-muted">Created {{ reservation.created_at|date:"M j, Y H:i" }} by {{ reservation.created_by }}</small>
+    </div>
+    <div class="d-flex gap-2">
+        {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
+        <a href="{% url 'reservation_edit' reservation.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
+        {% endif %}
+        {% if reservation.status == 'confirmed' %}
+        <form method="post" action="{% url 'reservation_checkin' reservation.pk %}">
+            {% csrf_token %}<button class="btn btn-success btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i>Check In</button>
+        </form>
+        {% endif %}
+        {% if reservation.status == 'checked_in' %}
+        <form method="post" action="{% url 'reservation_checkout' reservation.pk %}">
+            {% csrf_token %}<button class="btn btn-warning btn-sm"><i class="bi bi-box-arrow-right me-1"></i>Check Out</button>
+        </form>
+        {% endif %}
+        {% if reservation.status in 'pending,confirmed' %}
+        <form method="post" action="{% url 'reservation_cancel' reservation.pk %}" onsubmit="return confirm('Cancel this reservation?')">
+            {% csrf_token %}<button class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Cancel</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Left column -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Status</div>
+            <div class="card-body text-center py-4">
+                {% if reservation.status == 'confirmed' %}<span class="badge bg-primary fs-6 px-4 py-2">Confirmed</span>
+                {% elif reservation.status == 'checked_in' %}<span class="badge bg-success fs-6 px-4 py-2">Checked In</span>
+                {% elif reservation.status == 'checked_out' %}<span class="badge bg-secondary fs-6 px-4 py-2">Checked Out</span>
+                {% elif reservation.status == 'pending' %}<span class="badge bg-warning text-dark fs-6 px-4 py-2">Pending</span>
+                {% elif reservation.status == 'cancelled' %}<span class="badge bg-danger fs-6 px-4 py-2">Cancelled</span>
+                {% endif %}
+                {% if reservation.actual_check_in %}
+                <div class="mt-3 small text-muted">Checked in: {{ reservation.actual_check_in|date:"M j, Y H:i" }}</div>
+                {% endif %}
+                {% if reservation.actual_check_out %}
+                <div class="small text-muted">Checked out: {{ reservation.actual_check_out|date:"M j, Y H:i" }}</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Guest</div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+                        <i class="bi bi-person fs-5 text-primary"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold">{{ reservation.guest.full_name }}</div>
+                        {% if reservation.guest.vip_status %}<span class="badge bg-warning text-dark" style="font-size:0.65rem;">VIP</span>{% endif %}
+                    </div>
+                </div>
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">Email</dt><dd class="col-7">{{ reservation.guest.email }}</dd>
+                    <dt class="col-5 text-muted">Phone</dt><dd class="col-7">{{ reservation.guest.phone }}</dd>
+                    <dt class="col-5 text-muted">Nationality</dt><dd class="col-7">{{ reservation.guest.nationality|default:"—" }}</dd>
+                </dl>
+                <a href="{% url 'guest_detail' reservation.guest.pk %}" class="btn btn-sm btn-outline-primary w-100 mt-3">View Guest Profile</a>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Room</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-5 text-muted">Room</dt><dd class="col-7 fw-semibold">{{ reservation.room.number }}</dd>
+                    <dt class="col-5 text-muted">Type</dt><dd class="col-7">{{ reservation.room.room_type.name }}</dd>
+                    <dt class="col-5 text-muted">Floor</dt><dd class="col-7">{{ reservation.room.floor }}</dd>
+                    <dt class="col-5 text-muted">Capacity</dt><dd class="col-7">{{ reservation.room.room_type.capacity }}</dd>
+                </dl>
+                <a href="{% url 'room_detail' reservation.room.pk %}" class="btn btn-sm btn-outline-secondary w-100 mt-3">View Room</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="col-lg-8">
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Booking Details</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-4 text-center border-end">
+                        <div class="text-muted small mb-1">Check-in</div>
+                        <div class="fw-bold fs-5">{{ reservation.check_in|date:"M j" }}</div>
+                        <div class="text-muted small">{{ reservation.check_in|date:"Y" }}</div>
+                    </div>
+                    <div class="col-sm-4 text-center border-end">
+                        <div class="text-muted small mb-1">Nights</div>
+                        <div class="fw-bold fs-5">{{ reservation.nights }}</div>
+                        <div class="text-muted small">night{{ reservation.nights|pluralize }}</div>
+                    </div>
+                    <div class="col-sm-4 text-center">
+                        <div class="text-muted small mb-1">Check-out</div>
+                        <div class="fw-bold fs-5">{{ reservation.check_out|date:"M j" }}</div>
+                        <div class="text-muted small">{{ reservation.check_out|date:"Y" }}</div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row g-2 small">
+                    <div class="col-sm-6">
+                        <span class="text-muted">Adults:</span> {{ reservation.adults }} &nbsp; <span class="text-muted">Children:</span> {{ reservation.children }}
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted">Source:</span> {{ reservation.get_source_display }}
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted">Rate/Night:</span> <strong>${{ reservation.rate_per_night }}</strong>
+                    </div>
+                    <div class="col-sm-6">
+                        <span class="text-muted">Discount:</span> {{ reservation.discount_percent }}%
+                    </div>
+                </div>
+                {% if reservation.special_requests %}
+                <div class="mt-3 p-3 bg-light rounded">
+                    <div class="small fw-semibold text-muted mb-1">Special Requests</div>
+                    <div class="small">{{ reservation.special_requests }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Charges Summary -->
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center">
+                <span>Charges</span>
+                {% if reservation.status == 'checked_in' %}
+                <button class="btn btn-sm btn-outline-primary py-0" data-bs-toggle="modal" data-bs-target="#serviceModal">
+                    <i class="bi bi-plus me-1"></i>Add Service
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="px-4">Room charge ({{ reservation.nights }} nights × ${{ reservation.rate_per_night }})</td>
+                            <td class="text-end px-4">${{ reservation.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        {% if reservation.discount_percent %}
+                        <tr class="text-success">
+                            <td class="px-4">Discount ({{ reservation.discount_percent }}%)</td>
+                            <td class="text-end px-4">-${{ reservation.discount_amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                        {% for charge in service_charges %}
+                        <tr>
+                            <td class="px-4"><small class="text-muted">{{ charge.item.get_category_display }}</small> — {{ charge.item.name }} ×{{ charge.quantity }}</td>
+                            <td class="text-end px-4">${{ charge.total|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th class="px-4">Room Total</th>
+                            <th class="text-end px-4">${{ reservation.total_room_charge|floatformat:2 }}</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% if invoice %}
+            <div class="card-footer bg-white border-top">
+                <a href="{% url 'invoice_detail' invoice.pk %}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-receipt me-1"></i>View Invoice #{{ invoice.invoice_number }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Service Charge Modal -->
+{% if reservation.status == 'checked_in' %}
+<div class="modal fade" id="serviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Service Charge</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'add_service_charge' reservation.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Service Item</label>
+                        <select name="item" class="form-select" id="serviceItem" onchange="setPrice(this)">
+                            <option value="">Select item...</option>
+                            {% for item in service_items %}
+                            <option value="{{ item.pk }}" data-price="{{ item.price }}">{{ item.name }} — ${{ item.price }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Quantity</label>
+                            <input type="number" name="quantity" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Unit Price ($)</label>
+                            <input type="number" name="unit_price" class="form-control" step="0.01" id="unitPrice">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label small fw-semibold">Notes</label>
+                        <input type="text" name="notes" class="form-control" placeholder="Optional">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Charge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function setPrice(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    document.getElementById('unitPrice').value = opt.dataset.price || '';
+}
+</script>
+{% endif %}
+{% endblock %}

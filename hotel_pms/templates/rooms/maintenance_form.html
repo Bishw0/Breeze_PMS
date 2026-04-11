@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Maintenance Request — Hotel PMS{% endblock %}
+{% block breadcrumb %}<a href="{% url 'maintenance_list' %}">Maintenance</a> / {% if request_obj %}Update{% else %}New Request{% endif %}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <button onclick="history.back()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></button>
+        <h4 class="fw-bold mb-0">{% if request_obj %}Update Maintenance Request{% else %}New Maintenance Request{% endif %}</h4>
+    </div>
+    <div class="card">
+        <div class="card-body p-4">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">{{ field.label }}</label>
+                    {{ field }}
+                    {% for e in field.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn btn-warning px-4"><i class="bi bi-check-lg me-1"></i>Save</button>
+                    <button type="button" onclick="history.back()" class="btn btn-outline-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+form select, form input[type=text], form textarea {
+    display:block; width:100%; padding:.375rem .75rem; font-size:.875rem;
+    border:1px solid #dee2e6; border-radius:6px; background:#fff;
+}
+</style>
+{% endblock %}

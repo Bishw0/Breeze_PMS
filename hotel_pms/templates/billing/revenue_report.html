@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Revenue Report — Hotel PMS{% endblock %}
+{% block breadcrumb %}Billing / Revenue Report{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-bar-chart-line me-2"></i>Revenue Report</h4>
+    <span class="text-muted small">As of {{ today|date:"F j, Y" }}</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-center p-4">
+            <div class="text-muted small mb-1">Today's Revenue</div>
+            <div class="fw-bold fs-2 text-success">${{ daily_revenue|floatformat:2 }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-4">
+            <div class="text-muted small mb-1">This Month's Revenue</div>
+            <div class="fw-bold fs-2 text-primary">${{ monthly_revenue|floatformat:2 }}</div>
+            <small class="text-muted">Since {{ month_start|date:"M j" }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue by method -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header py-3 px-4">Revenue by Payment Method</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th class="px-4">Method</th><th class="text-center">Transactions</th><th class="text-end px-4">Total</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for m in by_method %}
+                        <tr>
+                            <td class="px-4">
+                                {% if m.method == 'cash' %}<i class="bi bi-cash me-1 text-success"></i>
+                                {% elif m.method == 'credit_card' %}<i class="bi bi-credit-card me-1 text-primary"></i>
+                                {% else %}<i class="bi bi-bank me-1 text-muted"></i>{% endif %}
+                                {{ m.method|title|replace:"_":" " }}
+                            </td>
+                            <td class="text-center">{{ m.count }}</td>
+                            <td class="text-end px-4 fw-semibold">${{ m.total|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">No payment data.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header py-3 px-4">Last 30 Days</div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const data = {{ last_30_days|safe }};
+const ctx = document.getElementById('revenueChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: data.map(d => d.date),
+        datasets: [{
+            label: 'Revenue ($)',
+            data: data.map(d => d.amount),
+            backgroundColor: 'rgba(26,60,94,0.7)',
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } }, grid: { display: false } },
+            y: { ticks: { font: { size: 10 } } }
+        }
+    }
+});
+</script>
+{% endblock %}

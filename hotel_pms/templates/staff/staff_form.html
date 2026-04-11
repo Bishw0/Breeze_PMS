@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Hotel PMS{% endblock %}
+{% block breadcrumb %}<a href="{% url 'staff_list' %}">Staff</a> / {{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+<div class="col-lg-7">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <button onclick="history.back()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></button>
+        <h4 class="fw-bold mb-0">{{ title }}</h4>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Account Details</div>
+            <div class="card-body p-4">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">First Name</label>
+                        {{ user_form.first_name }}
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Last Name</label>
+                        {{ user_form.last_name }}
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <label class="form-label small fw-semibold">Username *</label>
+                    {{ user_form.username }}
+                    {% for e in user_form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="mt-3">
+                    <label class="form-label small fw-semibold">Email</label>
+                    {{ user_form.email }}
+                </div>
+                <div class="mt-3">
+                    <label class="form-label small fw-semibold">Password *</label>
+                    {{ user_form.password }}
+                </div>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Staff Details</div>
+            <div class="card-body p-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Role</label>
+                    {{ profile_form.role }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Phone</label>
+                    {{ profile_form.phone }}
+                </div>
+                <div>
+                    <label class="form-label small fw-semibold">Hire Date</label>
+                    {{ profile_form.hire_date }}
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">Create Staff Member</button>
+            <button type="button" onclick="history.back()" class="btn btn-outline-secondary">Cancel</button>
+        </div>
+    </form>
+</div>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+form select, form input[type=text], form input[type=email], form input[type=password], form input[type=date] {
+    display:block; width:100%; padding:.375rem .75rem; font-size:.875rem;
+    border:1px solid #dee2e6; border-radius:6px; background:#fff;
+}
+</style>
+{% endblock %}

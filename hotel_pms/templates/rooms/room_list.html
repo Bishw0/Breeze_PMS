@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Rooms — Hotel PMS{% endblock %}
+{% block breadcrumb %}Rooms{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Rooms</h4>
+    <a href="{% url 'room_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Room</a>
+</div>
+
+<!-- Status Summary -->
+<div class="row g-2 mb-4">
+    {% for key, label in status_choices %}
+    <div class="col">
+        <a href="?status={{ key }}" class="text-decoration-none">
+            <div class="card text-center p-3 {% if current_filters.status == key %}border-primary{% endif %}">
+                <div class="fw-bold fs-4">{{ status_counts|default_if_none:"0" }}</div>
+                <small class="text-muted">{{ label }}</small>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Room number..." value="{{ current_filters.search }}">
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for key, label in status_choices %}
+                    <option value="{{ key }}" {% if current_filters.status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="type" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    {% for rt in room_types %}
+                    <option value="{{ rt.pk }}" {% if current_filters.type == rt.pk|stringformat:"s" %}selected{% endif %}>{{ rt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="floor" class="form-select form-select-sm">
+                    <option value="">All Floors</option>
+                    {% for f in floors %}
+                    <option value="{{ f }}" {% if current_filters.floor == f|stringformat:"s" %}selected{% endif %}>Floor {{ f }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-sm btn-primary me-1">Filter</button>
+                <a href="{% url 'room_list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Rooms Grid -->
+<div class="row g-3">
+    {% for room in rooms %}
+    <div class="col-sm-6 col-md-4 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="fw-bold mb-0">Room {{ room.number }}</h5>
+                    {% if room.status == 'available' %}<span class="badge bg-success">Available</span>
+                    {% elif room.status == 'occupied' %}<span class="badge bg-primary">Occupied</span>
+                    {% elif room.status == 'maintenance' %}<span class="badge bg-danger">Maintenance</span>
+                    {% elif room.status == 'cleaning' %}<span class="badge bg-warning text-dark">Cleaning</span>
+                    {% elif room.status == 'reserved' %}<span class="badge bg-purple" style="background:#7c3aed!important;">Reserved</span>
+                    {% endif %}
+                </div>
+                <div class="text-muted small mb-1">{{ room.room_type.name }}</div>
+                <div class="text-muted small">Floor {{ room.floor }} &nbsp;·&nbsp; Up to {{ room.room_type.capacity }} guests</div>
+                <div class="mt-2 fw-semibold text-primary">${{ room.current_price }}<small class="text-muted fw-normal">/night</small></div>
+                {% if room.is_smoking %}<span class="badge bg-light text-dark me-1 mt-1"><i class="bi bi-slash-circle"></i> Non-smoke overridden</span>{% endif %}
+                {% if room.has_view %}<span class="badge bg-light text-dark mt-1"><i class="bi bi-eye"></i> View</span>{% endif %}
+            </div>
+            <div class="card-footer bg-white border-top-0 pt-0 pb-3 px-3">
+                <a href="{% url 'room_detail' room.pk %}" class="btn btn-sm btn-outline-primary w-100">View Details</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <i class="bi bi-grid fs-1 d-block mb-2"></i>No rooms found.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

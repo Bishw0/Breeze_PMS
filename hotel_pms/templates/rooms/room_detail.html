@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Room {{ room.number }} — Hotel PMS{% endblock %}
+{% block breadcrumb %}<a href="{% url 'room_list' %}">Rooms</a> / Room {{ room.number }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">Room {{ room.number }}</h4>
+        <span class="text-muted">{{ room.room_type.name }} — Floor {{ room.floor }}</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'room_edit' room.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Edit</a>
+        <a href="{% url 'maintenance_create_for_room' room.pk %}" class="btn btn-outline-warning btn-sm"><i class="bi bi-tools me-1"></i>Report Issue</a>
+        <a href="{% url 'reservation_create' %}?room={{ room.pk }}" class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>New Booking</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Room Information</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-muted small">Status</dt>
+                    <dd class="col-sm-7">
+                        {% if room.status == 'available' %}<span class="badge bg-success">Available</span>
+                        {% elif room.status == 'occupied' %}<span class="badge bg-primary">Occupied</span>
+                        {% elif room.status == 'maintenance' %}<span class="badge bg-danger">Maintenance</span>
+                        {% elif room.status == 'cleaning' %}<span class="badge bg-warning text-dark">Cleaning</span>
+                        {% else %}<span class="badge bg-secondary">{{ room.get_status_display }}</span>
+                        {% endif %}
+                    </dd>
+                    <dt class="col-sm-5 text-muted small">Type</dt>
+                    <dd class="col-sm-7">{{ room.room_type.name }}</dd>
+                    <dt class="col-sm-5 text-muted small">Floor</dt>
+                    <dd class="col-sm-7">{{ room.floor }}</dd>
+                    <dt class="col-sm-5 text-muted small">Capacity</dt>
+                    <dd class="col-sm-7">{{ room.room_type.capacity }} guests</dd>
+                    <dt class="col-sm-5 text-muted small">Rate/Night</dt>
+                    <dd class="col-sm-7 fw-semibold text-primary">${{ room.current_price }}</dd>
+                    <dt class="col-sm-5 text-muted small">Smoking</dt>
+                    <dd class="col-sm-7">{% if room.is_smoking %}Yes{% else %}No{% endif %}</dd>
+                    <dt class="col-sm-5 text-muted small">View</dt>
+                    <dd class="col-sm-7">{% if room.has_view %}Yes{% else %}No{% endif %}</dd>
+                    {% if room.last_cleaned %}
+                    <dt class="col-sm-5 text-muted small">Last Cleaned</dt>
+                    <dd class="col-sm-7">{{ room.last_cleaned|date:"M j, H:i" }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        <!-- Quick Status Change -->
+        <div class="card">
+            <div class="card-header py-3 px-4">Update Status</div>
+            <div class="card-body">
+                <form method="post" action="{% url 'room_status_update' room.pk %}">
+                    {% csrf_token %}
+                    <select name="status" class="form-select form-select-sm mb-2">
+                        {% for key, label in room.STATUS_CHOICES %}
+                        <option value="{{ key }}" {% if room.status == key %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Update Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Amenities -->
+        {% if room.room_type.amenities_list %}
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4">Amenities</div>
+            <div class="card-body">
+                {% for amenity in room.room_type.amenities_list %}
+                <span class="badge bg-light text-dark me-1 mb-1 p-2"><i class="bi bi-check-circle-fill text-success me-1"></i>{{ amenity }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Upcoming Reservations -->
+        <div class="card mb-3">
+            <div class="card-header py-3 px-4 d-flex justify-content-between">
+                <span>Upcoming Reservations</span>
+                <a href="{% url 'reservation_create' %}?room={{ room.pk }}" class="btn btn-sm btn-outline-primary py-0">+ Book</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th class="px-4">Reservation</th><th>Guest</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for res in upcoming_reservations %}
+                        <tr>
+                            <td class="px-4"><a href="{% url 'reservation_detail' res.pk %}">{{ res.reservation_number }}</a></td>
+                            <td>{{ res.guest.full_name }}</td>
+                            <td>{{ res.check_in }}</td>
+                            <td>{{ res.check_out }}</td>
+                            <td><span class="badge bg-primary">{{ res.get_status_display }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-muted text-center py-3">No upcoming reservations.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Maintenance Requests -->
+        <div class="card">
+            <div class="card-header py-3 px-4 d-flex justify-content-between">
+                <span>Maintenance Requests</span>
+                <a href="{% url 'maintenance_create_for_room' room.pk %}" class="btn btn-sm btn-outline-warning py-0">+ Report</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr><th class="px-4">Issue</th><th>Priority</th><th>Status</th><th>Reported</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for mr in maintenance_requests %}
+                        <tr>
+                            <td class="px-4">{{ mr.title }}</td>
+                            <td>
+                                {% if mr.priority == 'urgent' %}<span class="badge bg-danger">Urgent</span>
+                                {% elif mr.priority == 'high' %}<span class="badge bg-warning text-dark">High</span>
+                                {% else %}<span class="badge bg-light text-dark">{{ mr.get_priority_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-secondary">{{ mr.get_status_display }}</span></td>
+                            <td>{{ mr.created_at|date:"M j" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-muted text-center py-3">No maintenance requests.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

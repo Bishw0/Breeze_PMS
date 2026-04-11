@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Reservations — Hotel PMS{% endblock %}
+{% block breadcrumb %}Reservations{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2"></i>Reservations</h4>
+    <a href="{% url 'reservation_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Reservation</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by name, room, #..." value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for key, label in status_choices %}
+                    <option value="{{ key }}" {% if current_status == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}" placeholder="From">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}" placeholder="To">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-sm btn-primary me-1">Filter</button>
+                <a href="{% url 'reservation_list' %}" class="btn btn-sm btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="px-4">Reservation #</th>
+                    <th>Guest</th>
+                    <th>Room</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Nights</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for res in reservations %}
+                <tr>
+                    <td class="px-4"><a href="{% url 'reservation_detail' res.pk %}" class="fw-semibold text-decoration-none">{{ res.reservation_number }}</a></td>
+                    <td>
+                        <a href="{% url 'guest_detail' res.guest.pk %}" class="text-decoration-none">{{ res.guest.full_name }}</a>
+                        {% if res.guest.vip_status %}<span class="badge bg-warning text-dark ms-1" style="font-size:0.6rem;">VIP</span>{% endif %}
+                    </td>
+                    <td><span class="badge bg-light text-dark">{{ res.room.number }}</span> <small class="text-muted">{{ res.room.room_type.name }}</small></td>
+                    <td>{{ res.check_in|date:"M j, Y" }}</td>
+                    <td>{{ res.check_out|date:"M j, Y" }}</td>
+                    <td class="text-center">{{ res.nights }}</td>
+                    <td class="fw-semibold">${{ res.total_room_charge|floatformat:2 }}</td>
+                    <td>
+                        {% if res.status == 'confirmed' %}<span class="badge bg-primary">Confirmed</span>
+                        {% elif res.status == 'checked_in' %}<span class="badge bg-success">Checked In</span>
+                        {% elif res.status == 'checked_out' %}<span class="badge bg-secondary">Checked Out</span>
+                        {% elif res.status == 'pending' %}<span class="badge bg-warning text-dark">Pending</span>
+                        {% elif res.status == 'cancelled' %}<span class="badge bg-danger">Cancelled</span>
+                        {% elif res.status == 'no_show' %}<span class="badge bg-dark">No Show</span>
+                        {% endif %}
+                    </td>
+                    <td><small class="text-muted">{{ res.get_source_display }}</small></td>
+                    <td><a href="{% url 'reservation_detail' res.pk %}" class="btn btn-sm btn-outline-secondary py-0 px-2">View</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" class="text-center text-muted py-5">No reservations found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
