@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}OTA Inbox - Hotel PMS{% endblock %}
+{% block breadcrumb %}OTA Inbox{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-envelope-paper me-2"></i>OTA Inbox</h4>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">Paste Raw OTA Email</div>
+    <div class="card-body">
+        <form method="post" action="{% url 'ota_ingest' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="raw_content" class="form-label">Raw email text</label>
+                <textarea
+                    id="raw_content"
+                    name="raw_content"
+                    class="form-control"
+                    rows="12"
+                    placeholder="Paste the full OTA email content here..."
+                    required
+                ></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-stars me-1"></i>Parse Email
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Parsed Emails</div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="px-4">Source</th>
+                    <th>Guest</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Room Type</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ota_email in ota_emails %}
+                <tr>
+                    <td class="px-4">
+                        <div class="fw-semibold">{{ ota_email.source_channel|default:"Unknown" }}</div>
+                        {% if ota_email.subject %}
+                        <small class="text-muted">{{ ota_email.subject }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ ota_email.parsed_payload.guest_name|default:"-" }}</td>
+                    <td>{{ ota_email.parsed_payload.check_in_date|default:"-" }}</td>
+                    <td>{{ ota_email.parsed_payload.check_out_date|default:"-" }}</td>
+                    <td>{{ ota_email.parsed_payload.room_type|default:"-" }}</td>
+                    <td>
+                        {% if ota_email.parsed_payload.total_amount %}
+                        {{ ota_email.parsed_payload.currency|default:"" }} {{ ota_email.parsed_payload.total_amount }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ota_email.processing_status == 'parsed' %}
+                        <span class="badge bg-success">Parsed</span>
+                        {% elif ota_email.processing_status == 'failed' %}
+                        <span class="badge bg-danger">Failed</span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                        {% endif %}
+                        {% if ota_email.failure_reason %}
+                        <div><small class="text-danger">{{ ota_email.failure_reason }}</small></div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-5">No OTA emails have been ingested yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
