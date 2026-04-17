@@ -7,8 +7,10 @@ from django.contrib.auth.models import User
 from rooms.models import Room, RoomType
 from guests.models import Guest
 from reservations.models import Reservation, RoomServiceItem
+from reservations.models import PricingRule
 from staff.models import StaffProfile
 import datetime
+from datetime import date
 
 
 class Command(BaseCommand):
@@ -16,6 +18,31 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write('Seeding database...')
+
+
+        # Clear existing data
+        from billing.models import Invoice, Payment
+        from reservations.models import Reservation, ServiceCharge, RoomServiceItem, PricingRule
+        from rooms.models import Room, RoomType, MaintenanceRequest
+        from guests.models import Guest
+        from staff.models import StaffProfile, ShiftLog
+        from ota.models import OtaEmail
+
+        Payment.objects.all().delete()
+        Invoice.objects.all().delete()
+        ServiceCharge.objects.all().delete()
+        Reservation.objects.all().delete()
+        MaintenanceRequest.objects.all().delete()
+        Room.objects.all().delete()
+        RoomType.objects.all().delete()
+        OtaEmail.objects.all().delete()
+        Guest.objects.all().delete()
+        ShiftLog.objects.all().delete()
+        StaffProfile.objects.all().delete()
+        PricingRule.objects.all().delete()
+        from django.contrib.auth.models import User
+        User.objects.filter(is_superuser=False).delete()
+        User.objects.filter(username__in=['admin', 'reception']).delete()
 
         # Superuser
         if not User.objects.filter(username='admin').exists():
@@ -36,16 +63,16 @@ class Command(BaseCommand):
 
         # Room Types
         types_data = [
-            ('Standard Room', 89.00, 2, 'WiFi, TV, Private Bathroom, Air Conditioning, Mini Fridge'),
-            ('Deluxe Room', 129.00, 2, 'WiFi, Smart TV, King Bed, Desk, Coffee Maker, Mini Bar'),
-            ('Superior Room', 159.00, 3, 'WiFi, Smart TV, Sofa Bed, Bathtub, Work Desk, Mini Bar'),
-            ('Junior Suite', 219.00, 4, 'WiFi, Smart TV, Living Area, Kitchenette, Jacuzzi, Balcony'),
-            ('Executive Suite', 349.00, 4, 'WiFi, Smart TV, Separate Living Room, Full Kitchen, Dining Area, Jacuzzi, Panoramic View'),
-            ('Presidential Suite', 599.00, 6, 'WiFi, Multiple TVs, 2 Bedrooms, Full Kitchen, Private Bar, Butler Service, Private Terrace'),
+            ('Standard Room', 4500, 2, 'WiFi, TV, Private Bathroom, Air Conditioning, Mini Fridge'),
+            ('Deluxe Double or Twin Room', 5800, 2, 'WiFi, Smart TV, King Bed, Desk, Coffee Maker, Mini Bar'),
+            ('Superior Room', 6500, 3, 'WiFi, Smart TV, Sofa Bed, Bathtub, Work Desk, Mini Bar'),
+            ('Junior Suite', 9500, 4, 'WiFi, Smart TV, Living Area, Kitchenette, Jacuzzi, Balcony'),
+            ('Executive Suite', 9500, 4, 'WiFi, Smart TV, Separate Living Room, Full Kitchen, Dining Area, Jacuzzi, Panoramic View'),
+            ('Presidential Suite', 9500, 6, 'WiFi, Multiple TVs, 2 Bedrooms, Full Kitchen, Private Bar, Butler Service, Private Terrace'),
         ]
         room_types = {}
         for name, price, cap, amenities in types_data:
-            rt, _ = RoomType.objects.get_or_create(
+            rt, _ = RoomType.objects.update_or_create(
                 name=name,
                 defaults={'base_price': price, 'capacity': cap, 'amenities': amenities}
             )
@@ -55,10 +82,10 @@ class Command(BaseCommand):
         rooms_data = [
             # Floor 1 - Standard
             ('101', 'Standard Room', 1), ('102', 'Standard Room', 1), ('103', 'Standard Room', 1),
-            ('104', 'Standard Room', 1), ('105', 'Deluxe Room', 1),
+            ('104', 'Standard Room', 1), ('105', 'Deluxe Double or Twin Room', 1),
             # Floor 2 - Deluxe
-            ('201', 'Deluxe Room', 2), ('202', 'Deluxe Room', 2), ('203', 'Superior Room', 2),
-            ('204', 'Superior Room', 2), ('205', 'Deluxe Room', 2),
+            ('201', 'Deluxe Double or Twin Room', 2), ('202', 'Deluxe Double or Twin Room', 2), ('203', 'Superior Room', 2),
+            ('204', 'Superior Room', 2), ('205', 'Deluxe Double or Twin Room', 2),
             # Floor 3 - Superior/Suite
             ('301', 'Superior Room', 3), ('302', 'Superior Room', 3),
             ('303', 'Junior Suite', 3), ('304', 'Junior Suite', 3),
@@ -69,7 +96,7 @@ class Command(BaseCommand):
             ('501', 'Presidential Suite', 5),
         ]
         for number, type_name, floor in rooms_data:
-            Room.objects.get_or_create(
+            Room.objects.update_or_create(
                 number=number,
                 defaults={
                     'room_type': room_types[type_name],
@@ -94,7 +121,7 @@ class Command(BaseCommand):
             ('Extra Bed', 'other', 35.00),
         ]
         for name, cat, price in services:
-            RoomServiceItem.objects.get_or_create(name=name, defaults={'category': cat, 'price': price})
+            RoomServiceItem.objects.update_or_create(name=name, defaults={'category': cat, 'price': price})
 
         # Guests
         guests_data = [
@@ -109,7 +136,7 @@ class Command(BaseCommand):
         ]
         created_guests = []
         for fn, ln, email, phone, nat, vip in guests_data:
-            g, _ = Guest.objects.get_or_create(
+            g, _ = Guest.objects.update_or_create(
                 email=email,
                 defaults={
                     'first_name': fn, 'last_name': ln, 'phone': phone,
@@ -147,6 +174,88 @@ class Command(BaseCommand):
                 elif status == 'confirmed':
                     room.status = 'reserved'
                     room.save()
+
+        # Clear existing pricing rules first
+        PricingRule.objects.all().delete()
+
+        # Seed real Thamel pricing rules
+        PricingRule.objects.create(
+            rule_name="Standard Rate",
+            room_type="Deluxe Double or Twin Room",
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31),
+            rule_type="override_rate",
+            adjustment_value=5800,
+            currency="NPR",
+            priority=10,
+            is_active=True,
+            notes="Base nightly rate for standard deluxe rooms in Thamel"
+        )
+
+        PricingRule.objects.create(
+            rule_name="Peak Season Lift",
+            room_type=None,
+            start_date=date(2026, 9, 1),
+            end_date=date(2026, 11, 30),
+            rule_type="percentage_adjustment",
+            adjustment_value=25,
+            currency="NPR",
+            priority=5,
+            is_active=True,
+            notes="Oct-Nov trekking season - highest demand period in Thamel"
+        )
+
+        PricingRule.objects.create(
+            rule_name="Weekend Premium",
+            room_type=None,
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31),
+            days_of_week=[4, 5],
+            rule_type="percentage_adjustment",
+            adjustment_value=12,
+            currency="NPR",
+            priority=15,
+            is_active=True,
+            notes="Friday and Saturday premium"
+        )
+
+        PricingRule.objects.create(
+            rule_name="Direct Booking Discount",
+            room_type=None,
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31),
+            rule_type="fixed_amount_adjustment",
+            adjustment_value=-400,
+            currency="NPR",
+            priority=20,
+            is_active=True,
+            notes="Discount for guests who book directly instead of via OTA"
+        )
+
+        PricingRule.objects.create(
+            rule_name="Festival Rate - Dashain",
+            room_type=None,
+            start_date=date(2026, 10, 1),
+            end_date=date(2026, 10, 15),
+            rule_type="percentage_adjustment",
+            adjustment_value=40,
+            currency="NPR",
+            priority=3,
+            is_active=True,
+            notes="Dashain festival - maximum demand, rooms fill weeks in advance"
+        )
+
+
+        # Sync room statuses with reservation statuses
+        for reservation in Reservation.objects.filter(status='checked_in'):
+            if reservation.room:
+                reservation.room.status = 'occupied'
+                reservation.room.save()
+
+        for reservation in Reservation.objects.filter(status='cleaning'):
+            if reservation.room:
+                reservation.room.status = 'cleaning'
+                reservation.room.save()
 
         self.stdout.write(self.style.SUCCESS('Database seeded successfully!'))
         self.stdout.write('')

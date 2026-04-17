@@ -29,11 +29,11 @@ def dashboard(request):
     base_room_type = RoomType.objects.order_by("id").first()
     recommended_rate = base_room_type.base_price if base_room_type else Decimal("0.00")
     if highest_priority_rule:
-        if highest_priority_rule.rule_type == PricingRule.RULE_TYPE_PERCENTAGE_ADJUSTMENT:
+        if highest_priority_rule.rule_type == "percentage_adjustment":
             recommended_rate += recommended_rate * (highest_priority_rule.adjustment_value / Decimal("100"))
-        elif highest_priority_rule.rule_type == PricingRule.RULE_TYPE_FIXED_AMOUNT_ADJUSTMENT:
+        elif highest_priority_rule.rule_type == "fixed_amount_adjustment":
             recommended_rate += highest_priority_rule.adjustment_value
-        elif highest_priority_rule.rule_type == PricingRule.RULE_TYPE_OVERRIDE_RATE:
+        elif highest_priority_rule.rule_type == "override_rate":
             recommended_rate = highest_priority_rule.adjustment_value
 
     if occupancy_rate >= 70:
