@@ -133,3 +133,32 @@ class ServiceCharge(models.Model):
     @property
     def total(self):
         return self.unit_price * self.quantity
+
+
+class PricingRule(models.Model):
+    RULE_TYPE_CHOICES = [
+        ('percentage_adjustment', 'Percentage Adjustment'),
+        ('fixed_amount_adjustment', 'Fixed Amount Adjustment'),
+        ('override_rate', 'Override Rate'),
+    ]
+
+    rule_name = models.CharField(max_length=200)
+    room_type = models.CharField(max_length=100, blank=True, null=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    days_of_week = models.JSONField(blank=True, null=True)
+    rule_type = models.CharField(max_length=30, choices=RULE_TYPE_CHOICES, default='percentage_adjustment')
+    adjustment_value = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='NPR')
+    min_stay_nights = models.IntegerField(null=True, blank=True)
+    priority = models.IntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['priority']
+
+    def __str__(self):
+        return f"{self.rule_name} ({self.get_rule_type_display()})"

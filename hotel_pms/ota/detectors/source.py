@@ -20,5 +20,7 @@ def detect_source(email: OtaEmailIngestRequest) -> SupportedOtaSource:
         return "makemytrip"
     if "trip.com" in searchable_text or "tripcom" in searchable_text:
         return "trip.com"
+    if "booking.com" in searchable_text or "booking number" in searchable_text:
+        return "booking.com"
 
     raise UnsupportedSourceError("OTA source could not be detected from the email content.")

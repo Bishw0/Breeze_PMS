@@ -4,7 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SupportedOtaSource = Literal["agoda", "trip.com", "makemytrip"]
+SupportedOtaSource = Literal["agoda", "trip.com", "makemytrip", "booking.com"]
 SupportedEmailType = Literal["confirmation"]
 
 

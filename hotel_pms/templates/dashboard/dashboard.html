@@ -71,6 +71,33 @@
             </div>
         </div>
     </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="text-muted small mb-1">Recommended Rate Tonight</div>
+                        <div class="fs-4 fw-bold text-dark">NPR {{ recommended_rate|floatformat:2 }}</div>
+                        <small class="text-muted">Occupancy {{ occupancy_rate }}%</small>
+                    </div>
+                    <div class="bg-dark bg-opacity-10 rounded-3 p-2"><i class="bi bi-cash-coin fs-4 text-dark"></i></div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Rule:
+                        {% if applied_pricing_rule %}
+                            {{ applied_pricing_rule.rule_name }}
+                        {% else %}
+                            No active rule
+                        {% endif %}
+                    </small>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'pricing_rule_list' %}" class="btn btn-sm btn-outline-dark">Manage Pricing Rules</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Room Status + Recent Reservations -->

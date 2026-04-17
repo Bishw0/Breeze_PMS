@@ -1,5 +1,5 @@
 from django import forms
-from .models import Reservation, ServiceCharge, RoomServiceItem
+from .models import PricingRule, Reservation, ServiceCharge, RoomServiceItem
 
 
 class ReservationForm(forms.ModelForm):
@@ -49,4 +49,31 @@ class ServiceChargeForm(forms.ModelForm):
         fields = ['item', 'quantity', 'unit_price', 'notes']
         widgets = {
             'notes': forms.TextInput(attrs={'placeholder': 'Optional note'}),
+        }
+
+
+class PricingRuleForm(forms.ModelForm):
+    class Meta:
+        model = PricingRule
+        fields = [
+            "rule_name",
+            "room_type",
+            "start_date",
+            "end_date",
+            "days_of_week",
+            "rule_type",
+            "adjustment_value",
+            "currency",
+            "min_stay_nights",
+            "priority",
+            "is_active",
+            "notes",
+        ]
+        widgets = {
+            "start_date": forms.DateInput(attrs={"type": "date"}),
+            "end_date": forms.DateInput(attrs={"type": "date"}),
+            "days_of_week": forms.Textarea(
+                attrs={"rows": 2, "placeholder": "[0,1,2,3,4,5,6] (optional)"}
+            ),
+            "notes": forms.Textarea(attrs={"rows": 3}),
         }

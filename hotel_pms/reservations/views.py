@@ -2,10 +2,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q, Count
-from .models import Reservation, ServiceCharge, RoomServiceItem
-from .forms import ReservationForm, ServiceChargeForm
-from rooms.models import Room
+from django.db.models import Q
+from decimal import Decimal
+from .models import PricingRule, Reservation, ServiceCharge, RoomServiceItem
+from .forms import PricingRuleForm, ReservationForm, ServiceChargeForm
+from rooms.models import Room, RoomType
 from billing.models import Invoice
 
 
@@ -21,6 +22,26 @@ def dashboard(request):
     occupied_rooms = Room.objects.filter(status='occupied').count()
     available_rooms = Room.objects.filter(status='available').count()
     occupancy_rate = round((occupied_rooms / total_rooms * 100) if total_rooms else 0, 1)
+
+    pricing_rules = PricingRule.objects.filter(is_active=True).order_by("priority", "-created_at")
+    highest_priority_rule = pricing_rules.first()
+
+    base_room_type = RoomType.objects.order_by("id").first()
+    recommended_rate = base_room_type.base_price if base_room_type else Decimal("0.00")
+    if highest_priority_rule:
+        if highest_priority_rule.rule_type == PricingRule.RULE_TYPE_PERCENTAGE_ADJUSTMENT:
+            recommended_rate += recommended_rate * (highest_priority_rule.adjustment_value / Decimal("100"))
+        elif highest_priority_rule.rule_type == PricingRule.RULE_TYPE_FIXED_AMOUNT_ADJUSTMENT:
+            recommended_rate += highest_priority_rule.adjustment_value
+        elif highest_priority_rule.rule_type == PricingRule.RULE_TYPE_OVERRIDE_RATE:
+            recommended_rate = highest_priority_rule.adjustment_value
+
+    if occupancy_rate >= 70:
+        recommended_rate += recommended_rate * Decimal("0.08")
+    elif occupancy_rate >= 50:
+        recommended_rate += recommended_rate * Decimal("0.04")
+
+    recommended_rate = recommended_rate.quantize(Decimal("0.01"))
 
     recent_reservations = Reservation.objects.select_related(
         'guest', 'room', 'room__room_type'
@@ -40,6 +61,9 @@ def dashboard(request):
         'occupied_rooms': occupied_rooms,
         'available_rooms': available_rooms,
         'occupancy_rate': occupancy_rate,
+        'pricing_rules': pricing_rules,
+        'applied_pricing_rule': highest_priority_rule,
+        'recommended_rate': recommended_rate,
         'recent_reservations': recent_reservations,
         'pending_maintenance': pending_maintenance,
         'today': today,
@@ -213,3 +237,30 @@ def add_service_charge(request, pk):
             charge.save()
             messages.success(request, 'Service charge added.')
     return redirect('reservation_detail', pk=pk)
+
+
+@login_required
+def pricing_rule_list(request):
+    pricing_rules = PricingRule.objects.all().order_by("priority", "-created_at")
+    return render(request, "reservations/pricing_list.html", {"pricing_rules": pricing_rules})
+
+
+@login_required
+def pricing_rule_create(request):
+    if request.method == "POST":
+        form = PricingRuleForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Pricing rule created.")
+            return redirect("pricing_rule_list")
+    else:
+        form = PricingRuleForm()
+
+    return render(
+        request,
+        "reservations/pricing_form.html",
+        {
+            "form": form,
+            "title": "Create Pricing Rule",
+        },
+    )

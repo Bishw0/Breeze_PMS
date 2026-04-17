@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Hotel PMS{% endblock %}
+{% block breadcrumb %}<a href="{% url 'pricing_rule_list' %}">Pricing Rules</a> / {{ title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <button onclick="history.back()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></button>
+            <h4 class="fw-bold mb-0">{{ title }}</h4>
+        </div>
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'notes' or field.name == 'days_of_week' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label small fw-semibold">{{ field.label }}</label>
+                            {{ field }}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+                    {% endif %}
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Rule</button>
+                        <a href="{% url 'pricing_rule_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+    form select, form input[type=text], form input[type=number], form input[type=date], form textarea {
+        display: block; width: 100%; padding: .375rem .75rem; font-size: .875rem;
+        border: 1px solid #dee2e6; border-radius: 6px; background: #fff;
+    }
+</style>
+{% endblock %}

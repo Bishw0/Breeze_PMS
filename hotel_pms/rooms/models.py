@@ -90,3 +90,36 @@ class MaintenanceRequest(models.Model):
 
     def __str__(self):
         return f"{self.room} - {self.title}"
+
+
+class RateRule(models.Model):
+    RULE_TYPE_PERCENTAGE_ADJUSTMENT = "percentage_adjustment"
+    RULE_TYPE_FIXED_AMOUNT_ADJUSTMENT = "fixed_amount_adjustment"
+    RULE_TYPE_OVERRIDE_RATE = "override_rate"
+
+    RULE_TYPE_CHOICES = [
+        (RULE_TYPE_PERCENTAGE_ADJUSTMENT, "Percentage Adjustment"),
+        (RULE_TYPE_FIXED_AMOUNT_ADJUSTMENT, "Fixed Amount Adjustment"),
+        (RULE_TYPE_OVERRIDE_RATE, "Override Rate"),
+    ]
+
+    rule_name = models.CharField(max_length=200)
+    room_type = models.CharField(max_length=100, null=True, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    days_of_week = models.JSONField(null=True, blank=True)
+    rule_type = models.CharField(max_length=30, choices=RULE_TYPE_CHOICES)
+    adjustment_value = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default="NPR")
+    min_stay_nights = models.IntegerField(null=True, blank=True)
+    priority = models.IntegerField(default=10)
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-priority", "-created_at"]
+
+    def __str__(self):
+        return self.rule_name

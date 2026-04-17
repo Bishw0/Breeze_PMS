@@ -1,6 +1,7 @@
 from ota.base import BaseOtaParser
 from ota.errors import MissingParserError
 from ota.parsers.agoda_confirmation import AgodaConfirmationParser
+from ota.parsers.booking_com_confirmation import BookingComConfirmationParser
 from ota.parsers.makemytrip_confirmation import MakeMyTripConfirmationParser
 from ota.parsers.trip_com_confirmation import TripComConfirmationParser
 from ota.schemas import SupportedEmailType, SupportedOtaSource
@@ -25,5 +26,6 @@ class OtaParserRegistry:
 
 registry = OtaParserRegistry()
 registry.register(AgodaConfirmationParser())
+registry.register(BookingComConfirmationParser())
 registry.register(TripComConfirmationParser())
 registry.register(MakeMyTripConfirmationParser())

@@ -1,0 +1,44 @@
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("rooms", "0001_initial"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="RateRule",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("rule_name", models.CharField(max_length=200)),
+                ("room_type", models.CharField(blank=True, max_length=100, null=True)),
+                ("start_date", models.DateField()),
+                ("end_date", models.DateField()),
+                ("days_of_week", models.JSONField(blank=True, null=True)),
+                (
+                    "rule_type",
+                    models.CharField(
+                        choices=[
+                            ("percentage_adjustment", "Percentage Adjustment"),
+                            ("fixed_amount_adjustment", "Fixed Amount Adjustment"),
+                            ("override_rate", "Override Rate"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                ("adjustment_value", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("currency", models.CharField(default="NPR", max_length=3)),
+                ("min_stay_nights", models.IntegerField(blank=True, null=True)),
+                ("priority", models.IntegerField(default=10)),
+                ("is_active", models.BooleanField(default=True)),
+                ("notes", models.TextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                "ordering": ["-priority", "-created_at"],
+            },
+        ),
+    ]

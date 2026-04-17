@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Pricing Rules — Hotel PMS{% endblock %}
+{% block breadcrumb %}Pricing Rules{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold mb-0"><i class="bi bi-currency-exchange me-2"></i>Pricing Rules</h4>
+    <a href="{% url 'pricing_rule_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>New Rule
+    </a>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th class="px-4">Rule Name</th>
+                    <th>Room Type</th>
+                    <th>Dates</th>
+                    <th>Type</th>
+                    <th>Value</th>
+                    <th>Priority</th>
+                    <th>Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in pricing_rules %}
+                <tr>
+                    <td class="px-4 fw-semibold">{{ rule.rule_name }}</td>
+                    <td>{{ rule.room_type|default:"All rooms" }}</td>
+                    <td>{{ rule.start_date|date:"M j, Y" }} - {{ rule.end_date|date:"M j, Y" }}</td>
+                    <td>{{ rule.get_rule_type_display }}</td>
+                    <td>{{ rule.currency }} {{ rule.adjustment_value|floatformat:2 }}</td>
+                    <td>{{ rule.priority }}</td>
+                    <td>
+                        {% if rule.is_active %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-5">No pricing rules found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
