@@ -1,174 +1,93 @@
-# 🏨 Hotel Property Management System (PMS)
+# Breeze PMS - Hotel Property Management System
 
-A full-featured Django web application for managing hotel operations — built with Django 4.2, Bootstrap 5, and SQLite.
-
----
+A full-featured Django web app for managing hotel operations, built for Aryatara Kathmandu Hotel in Thamel.
 
 ## Features
 
-### 🏠 Room Management
-- Room grid with real-time status (Available, Occupied, Cleaning, Maintenance, Reserved)
-- Room types with pricing, capacity, and amenities
-- One-click status updates
-- Floor and type filtering
-
-### 📅 Reservations
-- Full booking lifecycle: Pending → Confirmed → Checked In → Checked Out
-- Conflict detection — prevents double-bookings
-- Multi-source tracking (Walk-in, Phone, OTA, Corporate, etc.)
-- Special requests and internal notes
-- Service charge attachment during stays
-
-### 👥 Guest Management
-- Comprehensive guest profiles with contact info, ID, address
-- VIP flagging and blacklist management
-- Full stay history and total spend tracking
-- Quick search by name, email, or phone
-
-### 💳 Billing & Invoicing
-- Auto-generated invoices on checkout
-- Itemised line items: room charges + service charges
-- Tax calculation (configurable rate)
-- Payment recording with multiple methods (Cash, Card, Bank Transfer)
-- Partial payment tracking and balance due
-- Revenue reports with 30-day chart
-
-### 🔧 Maintenance
-- Maintenance request ticketing system
-- Priority levels: Low / Medium / High / Urgent
-- Status workflow: Open → In Progress → Resolved → Closed
-- Auto-sets room to "Maintenance" on creation, "Cleaning" on resolve
-
-### 👔 Staff
-- Staff profiles with roles (Admin, Manager, Receptionist, Housekeeping, etc.)
-- Django auth integration with login/logout
-- Per-role access ready to extend with permissions
-
----
+- Room management with real-time status
+- Reservation lifecycle (pending → confirmed → checked-in → checked-out)
+- Guest profiles with VIP and blacklist flags
+- Billing with invoices and payments (13% Nepal VAT)
+- Maintenance ticketing
+- **OTA email parsing** for Agoda, Booking.com, Trip.com, MakeMyTrip
+- **Gmail auto-ingestion** — emails parse automatically
+- **Pricing rules engine** with seasonal adjustments
+- Dashboard with occupancy and recommended rate
 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.10+
-- pip
+- Python 3.10
+- PostgreSQL 14+ (or use SQLite for quick demo)
+- A Gmail account with App Password (for OTA auto-ingestion)
 
-### Setup
+### 1. Clone and install
 
 ```bash
-cd hotel_pms
-
-# Option 1: Use the setup script
-chmod +x start.sh
-./start.sh
-
-# Option 2: Manual setup
+git clone https://github.com/Bishw0/Breeze_PMS.git
+cd Breeze_PMS/hotel_pms
 pip install -r requirements.txt
-python manage.py makemigrations rooms guests reservations billing staff
+```
+
+### 2. Set up environment variables
+
+Create a `.env` file in the `hotel_pms/` folder:
+GMAIL_ADDRESS=your-gmail@gmail.com
+GMAIL_APP_PASSWORD=your-16-char-app-password
+
+Get an App Password at: https://myaccount.google.com/apppasswords
+
+### 3. Set up the database
+
+For PostgreSQL (recommended):
+
+```bash
+createdb breeze_pms
+# Update DATABASES in hotel_pms/settings.py with your Postgres user
 python manage.py migrate
 python manage.py seed_data
+```
+
+### 4. Run the app
+
+```bash
 python manage.py runserver
 ```
 
-Then open **http://127.0.0.1:8000** in your browser.
+Open http://127.0.0.1:8000 and log in:
+- **Admin:** admin / admin123
+- **Receptionist:** reception / reception123
 
-### Default Credentials
+## Demo the Features
 
-| Role         | Username    | Password       |
-|--------------|-------------|----------------|
-| Admin        | `admin`     | `admin123`     |
-| Receptionist | `reception` | `reception123` |
+### OTA Inbox (manual)
+1. Go to OTA Inbox in the sidebar
+2. Paste a raw booking email
+3. Click "Parse Email" — see it extract guest, dates, room, amount
 
----
+### OTA Auto-Ingest from Gmail
+```bash
+python manage.py fetch_ota_emails
+```
+Fetches all unread OTA emails from your Gmail inbox and parses them automatically.
+
+### Dashboard
+See occupancy rate, recommended nightly rate (NPR) based on real pricing rules, today's arrivals/departures.
 
 ## Project Structure
-
-```
 hotel_pms/
-├── hotel_pms/          # Django project config
-│   ├── settings.py
-│   └── urls.py
-│
-├── rooms/              # Room & maintenance management
-│   ├── models.py       # Room, RoomType, MaintenanceRequest
-│   ├── views.py
-│   ├── forms.py
-│   └── urls.py
-│
-├── guests/             # Guest profiles
-│   ├── models.py       # Guest
-│   ├── views.py
-│   └── forms.py
-│
-├── reservations/       # Bookings & service charges
-│   ├── models.py       # Reservation, ServiceCharge, RoomServiceItem
-│   ├── views.py        # Dashboard, check-in/out, charges
-│   └── forms.py
-│
-├── billing/            # Invoices & payments
-│   ├── models.py       # Invoice, Payment
-│   ├── views.py        # Invoice list, detail, payments, revenue report
-│   └── forms.py
-│
-├── staff/              # Staff accounts
-│   ├── models.py       # StaffProfile, ShiftLog
-│   ├── views.py        # Login, logout, staff management
-│   └── forms.py
-│
-└── templates/          # HTML templates (Bootstrap 5)
-    ├── base.html
-    ├── dashboard/
-    ├── rooms/
-    ├── reservations/
-    ├── guests/
-    ├── billing/
-    └── staff/
-```
-
----
-
-## Data Models
-
-```
-RoomType ──< Room
-Guest ──< Reservation >── Room
-Reservation ──< ServiceCharge >── RoomServiceItem
-Reservation ──1 Invoice ──< Payment
-User ──1 StaffProfile
-Room ──< MaintenanceRequest
-```
-
----
-
-## Extending the System
-
-### Add permissions by role
-In `views.py`, use `@user_passes_test` or a custom decorator:
-```python
-from django.contrib.auth.decorators import user_passes_test
-
-def is_manager(user):
-    return hasattr(user, 'staff_profile') and user.staff_profile.role in ['admin', 'manager']
-
-@user_passes_test(is_manager)
-def revenue_report(request):
-    ...
-```
-
-### Production deployment
-1. Set `DEBUG = False` in `settings.py`
-2. Set a strong `SECRET_KEY`
-3. Configure PostgreSQL in `DATABASES`
-4. Run `python manage.py collectstatic`
-5. Use `gunicorn` + `nginx`
-
----
+├── rooms/           # Rooms, room types, maintenance
+├── guests/          # Guest profiles
+├── reservations/    # Bookings + pricing rules
+├── billing/         # Invoices + payments
+├── staff/           # Staff accounts + roles
+├── ota/             # OTA email parsing (Agoda, Booking.com, Trip.com, MakeMyTrip)
+└── templates/       # Bootstrap 5 HTML templates
 
 ## Tech Stack
 
-| Layer     | Technology              |
-|-----------|-------------------------|
-| Backend   | Django 4.2              |
-| Database  | SQLite (dev) / PostgreSQL (prod) |
-| Frontend  | Bootstrap 5.3 + Bootstrap Icons |
-| Charts    | Chart.js 4.4            |
-| Auth      | Django built-in auth    |
+- Django 4.2
+- PostgreSQL
+- Bootstrap 5
+- Python 3.12
+- Gmail IMAP for OTA ingestion
