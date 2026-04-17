@@ -2,6 +2,14 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv(BASE_DIR / ".env")
+
+GMAIL_ADDRESS = os.environ.get("GMAIL_ADDRESS", "")
+GMAIL_APP_PASSWORD = os.environ.get("GMAIL_APP_PASSWORD", "")
+
 SECRET_KEY = 'django-insecure-hotel-pms-secret-key-change-in-production'
 
 DEBUG = True
